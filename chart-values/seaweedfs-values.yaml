@@ -1,0 +1,6 @@
+master:
+  volumeSizeLimitMB: 1000
+volume:
+  max: 5
+s3:
+  enabled: true
