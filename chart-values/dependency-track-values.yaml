@@ -22,3 +22,10 @@ apiserver:
       requests:
         cpu: 50m
         memory: 128Mi
+
+postgresql:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: bitnami/postgresql
+    tag: 15.4.0-debian-11-r0
