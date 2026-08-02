@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: artifactory
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: "https://charts.jfrog.io"
+      chart: artifactory
+      targetRevision: 107.x.x
+      helm:
+        valueFiles:
+          - "$values/chart-values/artifactory-values.yaml"
+    - repoURL: "https://github.com/davidjirca/k8s-platform-gitops.git"
+      targetRevision: HEAD
+      ref: values
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: artifactory
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

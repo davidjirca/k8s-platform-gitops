@@ -1,0 +1,12 @@
+global:
+  masterKeySecretName: artifactory-keys
+  joinKeySecretName: artifactory-keys
+nginx:
+  enabled: false
+postgresql:
+  enabled: true
+artifactory:
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "2Gi"
