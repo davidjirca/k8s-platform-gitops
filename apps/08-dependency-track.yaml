@@ -10,7 +10,7 @@ spec:
   sources:
     - repoURL: "https://evryfs.github.io/helm-charts"
       chart: dependency-track
-      targetRevision: 1.6.x
+      targetRevision: 0.x.x
       helm:
         valueFiles:
           - "$values/chart-values/dependency-track-values.yaml"
