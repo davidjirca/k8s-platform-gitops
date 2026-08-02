@@ -1,0 +1,24 @@
+frontend:
+  replicaCount: 1
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+apiserver:
+  replicaCount: 1
+  resources:
+    limits:
+      memory: 1.5Gi
+    requests:
+      cpu: 250m
+      memory: 768Mi
+  initContainers:
+    resources:
+      limits:
+        memory: 256Mi
+      requests:
+        cpu: 50m
+        memory: 128Mi

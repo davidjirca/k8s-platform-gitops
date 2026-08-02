@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dependency-track
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: "https://evryfs.github.io/helm-charts"
+      chart: dependency-track
+      targetRevision: 1.6.x
+      helm:
+        valueFiles:
+          - "$values/chart-values/dependency-track-values.yaml"
+    - repoURL: "https://github.com/davidjirca/k8s-platform-gitops.git"
+      targetRevision: HEAD
+      ref: values
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: dependency-track
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

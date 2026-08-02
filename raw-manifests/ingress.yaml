@@ -73,3 +73,23 @@ spec:
                 name: seaweedfs-filer
                 port:
                   number: 8888
+---
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dtrack-ingress
+  namespace: dependency-track
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: dtrack.codeforge.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dependency-track-frontend
+                port:
+                  number: 8080
