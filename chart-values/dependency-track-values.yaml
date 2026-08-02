@@ -29,3 +29,10 @@ postgresql:
     registry: docker.io
     repository: library/postgres
     tag: 15-alpine
+
+persistence:
+  enabled: true
+  existingClaim: "" # Leave blank so Helm generates and binds it
+  storageClass: "local-path"
+  accessMode: ReadWriteOnce
+  size: 10Gi
