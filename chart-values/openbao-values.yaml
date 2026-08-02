@@ -2,8 +2,9 @@ server:
   dev:
     enabled: true
     devRootToken: "root"
+  affinity: ""
 
 injector:
   enabled: true
   replicas: 1
-  affinity: {}
+  affinity: ""
