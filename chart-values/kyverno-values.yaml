@@ -16,12 +16,8 @@ backgroundController:
 reportsController:
   replicas: 1
 
-cleanupController:
-  replicas: 1
-
 cleanReports:
-  enabled: true
-  image:
-    registry: registry.k8s.io
-    repository: kubectl
-    tag: v1.28.5
+  enabled: false
+
+cleanupController:
+  enabled: false
