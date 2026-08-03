@@ -1,37 +1,11 @@
-# chart-values/dependency-track-values.yaml
-
-# Enable the Frontend Web UI
-frontend:
+persistence:
   enabled: true
-  replicaCount: 1
-  resources:
-    limits:
-      memory: 256Mi
-    requests:
-      cpu: 50m
-      memory: 64Mi
+  storageClass: "local-path"
+  size: 10Gi
 
-# Enable the API Server
-apiserver:
-  enabled: true
-  replicaCount: 1
-  persistentVolume:
-    enabled: true
-    storageClass: "local-path"
-    size: 10Gi
-    existingClaim: ""
-
-# Configure Ingress to point to the Frontend
-ingress:
-  enabled: true
-  className: traefik
-  annotations:
-    kubernetes.io/ingress.class: traefik
-  hosts:
-    - host: dtrack.codeforge.local
-      paths:
-        - path: /
-          pathType: Prefix
-          # Point to frontend service
-          serviceName: dependency-track-frontend
-          servicePort: 8080
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    memory: 1.5Gi
