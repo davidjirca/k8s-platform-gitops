@@ -1,38 +1,37 @@
+# chart-values/dependency-track-values.yaml
+
+# Enable the Frontend Web UI
 frontend:
+  enabled: true
   replicaCount: 1
   resources:
     limits:
       memory: 256Mi
     requests:
       cpu: 50m
-      memory: 128Mi
+      memory: 64Mi
 
+# Enable the API Server
 apiserver:
+  enabled: true
   replicaCount: 1
-  resources:
-    limits:
-      memory: 1.5Gi
-    requests:
-      cpu: 250m
-      memory: 768Mi
-  initContainers:
-    resources:
-      limits:
-        memory: 256Mi
-      requests:
-        cpu: 50m
-        memory: 128Mi
+  persistentVolume:
+    enabled: true
+    storageClass: "local-path"
+    size: 10Gi
+    existingClaim: ""
 
-postgresql:
+# Configure Ingress to point to the Frontend
+ingress:
   enabled: true
-  image:
-    registry: docker.io
-    repository: library/postgres
-    tag: 15-alpine
-
-persistence:
-  enabled: true
-  existingClaim: "" # Leave blank so Helm generates and binds it
-  storageClass: "local-path"
-  accessMode: ReadWriteOnce
-  size: 10Gi
+  className: traefik
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  hosts:
+    - host: dtrack.codeforge.local
+      paths:
+        - path: /
+          pathType: Prefix
+          # Point to frontend service
+          serviceName: dependency-track-frontend
+          servicePort: 8080
