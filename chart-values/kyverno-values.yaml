@@ -16,8 +16,12 @@ backgroundController:
 reportsController:
   replicas: 1
 
-cleanReports:
-  enabled: false
-
+# Disable the cleanup deployment & background report jobs
 cleanupController:
   enabled: false
+
+features:
+  logging:
+    format: text
+  cleanupServer:
+    enabled: false
