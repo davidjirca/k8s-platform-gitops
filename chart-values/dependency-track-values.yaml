@@ -10,6 +10,16 @@ resources:
   limits:
     memory: 1.5Gi
 
+livenessProbe:
+  initialDelaySeconds: 180
+  periodSeconds: 15
+  failureThreshold: 6
+
+readinessProbe:
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  failureThreshold: 12
+
 postgresql:
   enabled: true
   image:
