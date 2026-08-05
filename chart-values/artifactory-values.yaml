@@ -1,13 +1,13 @@
 global:
-  masterKeySecretName: artifactory-master-key
-  joinKeySecretName: artifactory-master-key
+  masterKeySecretName: artifactory-masterkey-secret
+  joinKeySecretName: artifactory-joinkey-secret
 nginx:
   enabled: false
 postgresql:
   enabled: true
 artifactory:
-  masterKeySecretName: artifactory-master-key
-  joinKeySecretName: artifactory-master-key
+  masterKeySecretName: artifactory-masterkey-secret
+  joinKeySecretName: artifactory-joinkey-secret
   resources:
     requests:
       cpu: "500m"
