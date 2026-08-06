@@ -8,15 +8,21 @@ metadata:
 spec:
   project: default
   sources:
+    # Source 1: Helm Chart
     - repoURL: "https://helm.releases.hashicorp.com"
       chart: vault
       targetRevision: 0.28.x
       helm:
         valueFiles:
           - "$values/chart-values/openbao-values.yaml"
+    # Source 2: Values Reference repository alias
     - repoURL: "https://github.com/davidjirca/k8s-platform-gitops.git"
       targetRevision: HEAD
       ref: values
+    # Source 3: Raw manifests (Config Job)
+    - repoURL: "https://github.com/davidjirca/k8s-platform-gitops.git"
+      targetRevision: HEAD
+      path: raw-manifests/openbao
   destination:
     server: "https://kubernetes.default.svc"
     namespace: openbao

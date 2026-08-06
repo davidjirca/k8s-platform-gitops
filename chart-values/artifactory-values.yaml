@@ -7,6 +7,10 @@ nginx:
 
 postgresql:
   enabled: true
+  auth:
+    username: artifactory
+    database: artifactory
+    password: "strongpassword"
 
 artifactory:
   masterKeySecretName: artifactory-master-key
