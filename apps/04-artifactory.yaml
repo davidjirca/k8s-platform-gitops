@@ -1,3 +1,4 @@
+#apps/04-artifactory.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

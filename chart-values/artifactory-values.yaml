@@ -1,3 +1,4 @@
+#chart-values/artifactory-values.yaml
 global:
   masterKeySecretName: artifactory-master-key
   joinKeySecretName: artifactory-master-key
