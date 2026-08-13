@@ -32,6 +32,9 @@ spec:
               echo "Waiting for OpenBao to respond..."
               until vault status; do sleep 2; done
 
+              echo "Enabling KV v2 secret engine..."
+              vault secrets enable -path=secret kv-v2 || true
+
               echo "Enabling Kubernetes auth method..."
               vault auth enable kubernetes || true
 
@@ -43,6 +46,9 @@ spec:
               vault policy write external-secrets-policy - <<EOF
               path "secret/data/*" {
                 capabilities = ["read"]
+              }
+              path "secret/metadata/*" {
+                capabilities = ["read", "list"]
               }
               EOF
 

@@ -1,0 +1,19 @@
+# chart-values/reloader-values.yaml
+reloader:
+  isArgoRollouts: false
+  isOpenshift: false
+  ignoreSecrets: false
+  ignoreConfigMaps: false
+  reloadOnCreate: true
+  syncAfterRestart: true
+  autoReloadAll: false
+  watchGlobally: true
+  deployment:
+    replicas: 1
+    resources:
+      limits:
+        cpu: "100m"
+        memory: "128Mi"
+      requests:
+        cpu: "10m"
+        memory: "64Mi"
