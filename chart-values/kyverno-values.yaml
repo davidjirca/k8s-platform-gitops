@@ -17,8 +17,10 @@ reportsController:
   replicas: 1
 
 # Disable the cleanup deployment & background report jobs
-cleanupController:
-  enabled: false
+reportsCleanup:
+  image:
+    repository: bitnami/kubectl
+    tag: latest
 
 features:
   logging:
