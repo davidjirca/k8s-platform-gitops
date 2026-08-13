@@ -14,8 +14,6 @@ postgresql:
     password: "strongpassword"
 
 artifactory:
-  image:
-    repository: "releases-docker.jfrog.io/jfrog/artifactory-oss"
   masterKeySecretName: artifactory-master-key
   joinKeySecretName: artifactory-master-key
   resources:
