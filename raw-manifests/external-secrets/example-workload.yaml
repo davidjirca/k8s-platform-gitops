@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-rotating-app
+  namespace: default
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+    # Reloader annotation to watch and reload pods upon secret rotation
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sample-rotating-app
+  template:
+    metadata:
+      labels:
+        app: sample-rotating-app
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: app
+          image: busybox:1.36.1
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Application started with secret injection."
+              while true; do
+                echo "[$(date)] DB_PASS: $DB_PASSWORD | API_TOKEN: $API_TOKEN"
+                sleep 30
+              done
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: example-app-secret
+                  key: database-password
+            - name: API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: example-app-secret
+                  key: api-token
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              cpu: "50m"
+              memory: "32Mi"

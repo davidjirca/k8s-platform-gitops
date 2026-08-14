@@ -32,8 +32,14 @@ spec:
               echo "Waiting for OpenBao to respond..."
               until vault status; do sleep 2; done
 
-              echo "Enabling KV v2 secret engine..."
+              echo "Enabling KV v2 secret engine at 'secret'..."
               vault secrets enable -path=secret kv-v2 || true
+
+              echo "Enabling Transit secret engine for dynamic encryption/signing..."
+              vault secrets enable -path=transit transit || true
+
+              echo "Creating Transit key for platform encryption..."
+              vault write -f transit/keys/platform-key || true
 
               echo "Enabling Kubernetes auth method..."
               vault auth enable kubernetes || true
@@ -42,7 +48,7 @@ spec:
               vault write auth/kubernetes/config \
                 kubernetes_host="https://kubernetes.default.svc:443"
 
-              echo "Writing External Secrets policy..."
+              echo "Writing External Secrets policy with dynamic and KV access..."
               vault policy write external-secrets-policy - <<EOF
               path "secret/data/*" {
                 capabilities = ["read"]
@@ -50,13 +56,36 @@ spec:
               path "secret/metadata/*" {
                 capabilities = ["read", "list"]
               }
+              path "transit/encrypt/*" {
+                capabilities = ["update"]
+              }
+              path "transit/decrypt/*" {
+                capabilities = ["update"]
+              }
+              path "database/creds/*" {
+                capabilities = ["read"]
+              }
+              path "sys/leases/renew" {
+                capabilities = ["update"]
+              }
+              path "sys/leases/revoke" {
+                capabilities = ["update"]
+              }
               EOF
 
-              echo "Creating External Secrets role..."
+              echo "Creating External Secrets role with 1h TTL for dynamic rotation..."
               vault write auth/kubernetes/role/external-secrets-role \
                 bound_service_account_names="external-secrets" \
                 bound_service_account_namespaces="external-secrets" \
                 policies="external-secrets-policy" \
-                ttl="1h"
+                ttl="1h" \
+                max_ttl="24h"
+
+              echo "Writing sample rotated credentials..."
+              vault kv put secret/database \
+                password="super-secret-db-pass-v1" \
+                username="app_user" || true
+              vault kv put secret/api \
+                token="dynamic-api-token-v1" || true
 
               echo "OpenBao configuration complete!"

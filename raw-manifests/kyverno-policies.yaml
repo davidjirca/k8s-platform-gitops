@@ -3,7 +3,7 @@ kind: ClusterPolicy
 metadata:
   name: disallow-root-execution
 spec:
-  validationFailureAction: Audit # Set to 'Enforce' to actively block non-compliant pods
+  validationFailureAction: Enforce
   background: true
   rules:
     - name: check-runAsNonRoot
@@ -12,12 +12,57 @@ spec:
           - resources:
               kinds:
                 - Pod
+              namespaces:
+                - "!kube-system"
+                - "!kyverno"
+                - "!argocd"
+                - "!openbao"
+                - "!seaweedfs"
+                - "!reloader"
       validate:
         message: "Running containers as root is forbidden. Set securityContext.runAsNonRoot to true."
+        anyPattern:
+          - spec:
+              securityContext:
+                runAsNonRoot: true
+          - spec:
+              containers:
+                - securityContext:
+                    runAsNonRoot: true
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-resource-requests-limits
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: check-container-resources
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - "!kube-system"
+                - "!kyverno"
+                - "!argocd"
+                - "!openbao"
+                - "!seaweedfs"
+                - "!reloader"
+      validate:
+        message: "CPU and memory resource requests and limits are mandatory for all containers."
         pattern:
           spec:
-            =(securityContext):
-              =(runAsNonRoot): true
+            containers:
+              - resources:
+                  requests:
+                    cpu: "?*"
+                    memory: "?*"
+                  limits:
+                    cpu: "?*"
+                    memory: "?*"
 ---
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
@@ -33,6 +78,16 @@ spec:
           - resources:
               kinds:
                 - Namespace
+              names:
+                - "!kube-system"
+                - "!kube-public"
+                - "!kube-node-lease"
+                - "!kyverno"
+                - "!argocd"
+                - "!openbao"
+                - "!seaweedfs"
+                - "!reloader"
+                - "!default"
       validate:
         message: "All namespaces must have an 'owner' label specified."
         pattern:

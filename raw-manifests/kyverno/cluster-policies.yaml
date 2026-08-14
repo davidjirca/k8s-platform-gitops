@@ -1,0 +1,243 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-root-execution
+  annotations:
+    policies.kyverno.io/title: Disallow Root Execution
+    policies.kyverno.io/category: Pod Security Standards (Restricted)
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Containers must run as a non-root user. Running containers as root provides
+      potential attackers with elevated privileges on the host system.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: check-runAsNonRoot
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - "!kube-system"
+                - "!kyverno"
+                - "!argocd"
+                - "!openbao"
+                - "!seaweedfs"
+                - "!reloader"
+      validate:
+        message: "Running containers as root is forbidden. Set spec.securityContext.runAsNonRoot or container securityContext.runAsNonRoot to true."
+        anyPattern:
+          - spec:
+              securityContext:
+                runAsNonRoot: true
+          - spec:
+              containers:
+                - securityContext:
+                    runAsNonRoot: true
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-resource-requests-limits
+  annotations:
+    policies.kyverno.io/title: Require CPU and Memory Requests and Limits
+    policies.kyverno.io/category: Best Practices / Resource Management
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      As application workloads share cluster resources, it is critical to define CPU and
+      memory requests and limits for every container to avoid noisy neighbor problems and OOM cascades.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: check-container-resources
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - "!kube-system"
+                - "!kyverno"
+                - "!argocd"
+                - "!openbao"
+                - "!seaweedfs"
+                - "!reloader"
+      validate:
+        message: "CPU and memory resource requests and limits are mandatory for all containers."
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  requests:
+                    cpu: "?*"
+                    memory: "?*"
+                  limits:
+                    cpu: "?*"
+                    memory: "?*"
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: mutate-pod-security-context
+  annotations:
+    policies.kyverno.io/title: Auto-Inject Secure Security Contexts
+    policies.kyverno.io/category: Pod Security Standards (Restricted)
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      Automatically mutates pods to enforce least-privilege runtime attributes:
+      runAsNonRoot, allowPrivilegeEscalation: false, readOnlyRootFilesystem: true,
+      and dropping all Linux capabilities unless explicitly defined.
+spec:
+  background: false
+  rules:
+    - name: mutate-security-defaults
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - "!kube-system"
+                - "!kyverno"
+                - "!argocd"
+                - "!openbao"
+                - "!seaweedfs"
+                - "!reloader"
+      mutate:
+        patchStrategicMerge:
+          spec:
+            securityContext:
+              +(runAsNonRoot): true
+            containers:
+              - (name): "?*"
+                securityContext:
+                  +(allowPrivilegeEscalation): false
+                  +(readOnlyRootFilesystem): true
+                  +(capabilities):
+                    +(drop):
+                      - ALL
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-namespace-scaffolding
+  annotations:
+    policies.kyverno.io/title: Auto-Generate Default NetworkPolicy and SecretStore
+    policies.kyverno.io/category: Multi-Tenancy / Zero Trust
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Automatically provisions a baseline NetworkPolicy and a namespaced SecretStore
+      pointing to OpenBao whenever a new application namespace is created.
+spec:
+  background: false
+  rules:
+    - name: generate-default-network-policy
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+              names:
+                - "!kube-system"
+                - "!kube-public"
+                - "!kube-node-lease"
+                - "!kyverno"
+                - "!argocd"
+                - "!openbao"
+                - "!seaweedfs"
+                - "!reloader"
+                - "!default"
+      generate:
+        apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        name: default-deny-ingress
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          spec:
+            podSelector: {}
+            policyTypes:
+              - Ingress
+            ingress:
+              # Allow intra-namespace traffic
+              - from:
+                  - podSelector: {}
+              # Allow ingress controller traffic
+              - from:
+                  - namespaceSelector:
+                      matchLabels:
+                        kubernetes.io/metadata.name: kube-system
+    - name: generate-namespaced-secretstore
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+              names:
+                - "!kube-system"
+                - "!kube-public"
+                - "!kube-node-lease"
+                - "!kyverno"
+                - "!argocd"
+                - "!openbao"
+                - "!seaweedfs"
+                - "!reloader"
+      generate:
+        apiVersion: external-secrets.io/v1beta1
+        kind: SecretStore
+        name: openbao-store
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          spec:
+            provider:
+              vault:
+                server: "http://openbao-vault.openbao.svc.cluster.local:8200"
+                path: "secret"
+                version: "v2"
+                auth:
+                  kubernetes:
+                    mountPath: "kubernetes"
+                    role: "external-secrets-role"
+                    serviceAccountRef:
+                      name: default
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-namespace-owner
+  annotations:
+    policies.kyverno.io/title: Require Namespace Owner Label
+    policies.kyverno.io/category: Governance
+    policies.kyverno.io/severity: low
+    policies.kyverno.io/description: >-
+      Ensures all non-system namespaces have an accountable team/owner label.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: check-owner-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+              names:
+                - "!kube-system"
+                - "!kube-public"
+                - "!kube-node-lease"
+                - "!kyverno"
+                - "!argocd"
+                - "!openbao"
+                - "!seaweedfs"
+                - "!reloader"
+                - "!default"
+      validate:
+        message: "All tenant namespaces must define an 'owner' or 'team' metadata label."
+        pattern:
+          metadata:
+            labels:
+              owner: "?*"
