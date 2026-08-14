@@ -12,7 +12,7 @@ spec:
   source:
     repoURL: "https://github.com/davidjirca/k8s-platform-gitops.git"
     targetRevision: HEAD
-    path: raw-manifests
+    path: raw-manifests/ingress
   destination:
     server: "https://kubernetes.default.svc"
     namespace: argocd
