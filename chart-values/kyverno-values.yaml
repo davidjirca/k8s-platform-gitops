@@ -16,7 +16,17 @@ backgroundController:
 reportsController:
   replicas: 1
 
-# Completely disable report cleanup CronJobs
+# Completely disable report cleanup CronJobs (Kyverno 3.2.x schema)
+cleanupJobs:
+  admissionReports:
+    enabled: false
+  clusterAdmissionReports:
+    enabled: false
+  ephemeralReports:
+    enabled: false
+  clusterEphemeralReports:
+    enabled: false
+
 reportsCleanup:
   enabled: false
 
