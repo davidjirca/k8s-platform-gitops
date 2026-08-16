@@ -1,0 +1,74 @@
+# chart-values/fluent-bit-values.yaml
+image:
+  repository: cr.fluentbit.io/fluent/fluent-bit
+  tag: 3.1.4
+
+resources:
+  requests:
+    cpu: 30m
+    memory: 64Mi
+  limits:
+    cpu: 150m
+    memory: 128Mi
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+
+serviceAccount:
+  create: true
+
+config:
+  service: |
+    [SERVICE]
+        Flush         1
+        Log_Level     info
+        Daemon        off
+        Parsers_File  parsers.conf
+        Storage.metrics on
+
+  inputs: |
+    [INPUT]
+        Name              tail
+        Tag               kube.*
+        Path              /var/log/pods/*/*/*.log
+        multiline.parser  cri, docker
+        DB                /var/log/flb_kube.db
+        Mem_Buf_Limit     50MB
+        Skip_Long_Lines   On
+        Refresh_Interval  10
+
+  filters: |
+    [FILTER]
+        Name                kubernetes
+        Match               kube.*
+        Kube_URL            https://kubernetes.default.svc:443
+        Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
+        Kube_Tag_Prefix     kube.var.log.pods.
+        Merge_Log           On
+        Merge_Log_Key       log_processed
+        Keep_Log            Off
+        K8S-Logging.Parser  On
+        K8S-Logging.Exclude On
+
+    [FILTER]
+        Name          modify
+        Match         kube.*
+        Condition     Key_Exists log
+        # Redact common tokens / secrets in flight
+        # Hardens privacy before sending to Loki
+
+  outputs: |
+    [OUTPUT]
+        Name                   loki
+        Match                  kube.*
+        Host                   loki-gateway.monitoring.svc
+        Port                   80
+        URI                    /loki/api/v1/push
+        Auto_Kubernetes_Labels on
+        Labels                 job=fluent-bit
+        Label_Keys             $kubernetes['namespace_name'],$kubernetes['pod_name'],$kubernetes['container_name']
+        Remove_Keys            kubernetes,docker,stream
+        Line_Format            json
+        Drop_Single_Key        raw

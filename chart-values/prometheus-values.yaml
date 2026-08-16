@@ -1,0 +1,49 @@
+# chart-values/prometheus-values.yaml
+server:
+  replicaCount: 1
+  retention: "7d"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  persistentVolume:
+    enabled: true
+    size: 5Gi
+
+nodeExporter:
+  enabled: true
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
+
+kubeStateMetrics:
+  enabled: true
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 50m
+      memory: 128Mi
+
+alertmanager:
+  enabled: true
+  persistence:
+    enabled: false
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
+
+pushgateway:
+  enabled: false

@@ -1,0 +1,73 @@
+# chart-values/loki-values.yaml
+deploymentMode: SingleBinary
+
+loki:
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 1
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb
+        object_store: s3
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+  storage:
+    type: s3
+    s3:
+      endpoint: "http://seaweedfs-s3.seaweedfs.svc:8333"
+      bucketnames: "loki-data"
+      insecure: true
+      s3ForcePathStyle: true
+      accessKeyId: "any"
+      secretAccessKey: "any"
+  limits_config:
+    retention_period: 336h # 14 days
+    reject_old_samples: true
+    reject_old_samples_max_age: 168h
+    max_query_length: 721h
+  compactor:
+    retention_enabled: true
+    working_directory: /var/loki/compactor
+
+singleBinary:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  persistence:
+    enabled: true
+    size: 5Gi
+
+# Disable distributed microservices components
+backend:
+  replicas: 0
+read:
+  replicas: 0
+write:
+  replicas: 0
+ingester:
+  replicas: 0
+querier:
+  replicas: 0
+queryFrontend:
+  replicas: 0
+tableManager:
+  enabled: false
+
+# Gateway service for internal ingestion/query routing
+gateway:
+  enabled: true
+  resources:
+    requests:
+      cpu: 20m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi

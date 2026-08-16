@@ -1,0 +1,50 @@
+# chart-values/grafana-values.yaml
+adminPassword: "admin"
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+persistence:
+  enabled: true
+  size: 2Gi
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus-server.monitoring.svc:80
+        isDefault: true
+        editable: false
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://loki-gateway.monitoring.svc:80
+        isDefault: false
+        editable: false
+        jsonData:
+          maxLines: 1000
+
+sidecar:
+  dashboards:
+    enabled: true
+    label: grafana_dashboard
+    labelValue: "1"
+    searchNamespace: ALL
+    folderAnnotation: k8s-sidecar-target-directory
+  datasources:
+    enabled: true
+    label: grafana_datasource
+    labelValue: "1"
+    searchNamespace: ALL
+
+service:
+  type: ClusterIP
+  port: 80

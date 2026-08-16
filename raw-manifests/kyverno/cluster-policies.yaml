@@ -27,6 +27,7 @@ spec:
                 - "!openbao"
                 - "!seaweedfs"
                 - "!reloader"
+                - "!monitoring"
       validate:
         message: "Running containers as root is forbidden. Set spec.securityContext.runAsNonRoot or container securityContext.runAsNonRoot to true."
         anyPattern:
@@ -67,6 +68,7 @@ spec:
                 - "!openbao"
                 - "!seaweedfs"
                 - "!reloader"
+                - "!monitoring"
       validate:
         message: "CPU and memory resource requests and limits are mandatory for all containers."
         pattern:
@@ -109,6 +111,7 @@ spec:
                 - "!openbao"
                 - "!seaweedfs"
                 - "!reloader"
+                - "!monitoring"
       mutate:
         patchStrategicMerge:
           spec:
@@ -153,6 +156,7 @@ spec:
                 - "!openbao"
                 - "!seaweedfs"
                 - "!reloader"
+                - "!monitoring"
                 - "!default"
       generate:
         apiVersion: networking.k8s.io/v1
@@ -189,6 +193,7 @@ spec:
                 - "!openbao"
                 - "!seaweedfs"
                 - "!reloader"
+                - "!monitoring"
       generate:
         apiVersion: external-secrets.io/v1beta1
         kind: SecretStore
@@ -239,6 +244,7 @@ spec:
                 - "!openbao"
                 - "!seaweedfs"
                 - "!reloader"
+                - "!monitoring"
                 - "!default"
       validate:
         message: "All tenant namespaces must define an 'owner' or 'team' metadata label."
