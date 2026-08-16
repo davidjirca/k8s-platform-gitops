@@ -60,3 +60,4 @@ config:
         Labels                 job=fluent-bit
         Line_Format            json
         Drop_Single_Key        raw
+        Buffer_Size            1MB
