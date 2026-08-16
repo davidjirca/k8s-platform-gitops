@@ -1,4 +1,7 @@
-# chart-values/velero-values.yaml
+# Disable Helm upgradeCRDs hook job (ArgoCD handles CRDs natively)
+upgradeCRDs: false
+cleanUpCRDs: false
+
 image:
   repository: velero/velero
   tag: v1.14.1
