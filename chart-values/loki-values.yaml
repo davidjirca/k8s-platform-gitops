@@ -33,6 +33,7 @@ loki:
     max_query_length: 721h
   compactor:
     retention_enabled: true
+    delete_request_store: s3
     working_directory: /var/loki/compactor
 
 singleBinary:
