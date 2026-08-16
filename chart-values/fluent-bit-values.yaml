@@ -53,8 +53,8 @@ config:
     [OUTPUT]
         Name                   loki
         Match                  kube.*
-        Host                   loki.monitoring.svc
-        Port                   3100
+        Host                   loki-gateway.monitoring.svc
+        Port                   80
         URI                    /loki/api/v1/push
         Auto_Kubernetes_Labels on
         Labels                 job=fluent-bit

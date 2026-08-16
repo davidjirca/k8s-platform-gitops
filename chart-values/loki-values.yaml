@@ -16,9 +16,12 @@ loki:
           period: 24h
   storage:
     type: s3
+    bucketNames:
+      chunks: "loki-data"
+      ruler: "loki-data"
+      admin: "loki-data"
     s3:
       endpoint: "http://seaweedfs-s3.seaweedfs.svc:8333"
-      bucketnames: "loki-data"
       insecure: true
       s3ForcePathStyle: true
       accessKeyId: "any"
