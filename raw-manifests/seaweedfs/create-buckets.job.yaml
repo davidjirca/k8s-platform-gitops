@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: seaweedfs-create-buckets
+  namespace: seaweedfs
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: create-buckets
+          image: curlimages/curl:8.7.1
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for SeaweedFS S3 endpoint to be ready..."
+              until curl -s http://seaweedfs-s3.seaweedfs.svc:8333/ > /dev/null 2>&1; do
+                sleep 2
+              done
+              echo "Creating S3 buckets..."
+              curl -s -X PUT http://seaweedfs-s3.seaweedfs.svc:8333/velero-backups
+              curl -s -X PUT http://seaweedfs-s3.seaweedfs.svc:8333/loki-data
+              echo "Buckets initialized successfully."

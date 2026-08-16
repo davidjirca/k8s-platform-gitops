@@ -19,6 +19,9 @@ spec:
     - repoURL: "https://github.com/davidjirca/k8s-platform-gitops.git"
       targetRevision: HEAD
       ref: values
+    - repoURL: "https://github.com/davidjirca/k8s-platform-gitops.git"
+      targetRevision: HEAD
+      path: raw-manifests/seaweedfs
   destination:
     server: "https://kubernetes.default.svc"
     namespace: seaweedfs
