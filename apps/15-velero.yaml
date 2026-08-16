@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: velero
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    # Source 1: Helm Chart
+    - repoURL: "https://vmware-tanzu.github.io/helm-charts"
+      chart: velero
+      targetRevision: 7.1.x
+      helm:
+        valueFiles:
+          - "$values/chart-values/velero-values.yaml"
+    # Source 2: Values Reference
+    - repoURL: "https://github.com/davidjirca/k8s-platform-gitops.git"
+      targetRevision: HEAD
+      ref: values
+    # Source 3: Raw Schedules
+    - repoURL: "https://github.com/davidjirca/k8s-platform-gitops.git"
+      targetRevision: HEAD
+      path: raw-manifests/velero
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: velero
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - SkipDryRunOnMissingResource=true
+      - ServerSideApply=true

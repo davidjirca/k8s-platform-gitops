@@ -28,6 +28,7 @@ spec:
                 - "!seaweedfs"
                 - "!reloader"
                 - "!monitoring"
+                - "!velero"
       validate:
         message: "Running containers as root is forbidden. Set spec.securityContext.runAsNonRoot or container securityContext.runAsNonRoot to true."
         anyPattern:
@@ -69,6 +70,7 @@ spec:
                 - "!seaweedfs"
                 - "!reloader"
                 - "!monitoring"
+                - "!velero"
       validate:
         message: "CPU and memory resource requests and limits are mandatory for all containers."
         pattern:
@@ -112,6 +114,7 @@ spec:
                 - "!seaweedfs"
                 - "!reloader"
                 - "!monitoring"
+                - "!velero"
       mutate:
         patchStrategicMerge:
           spec:
@@ -157,6 +160,7 @@ spec:
                 - "!seaweedfs"
                 - "!reloader"
                 - "!monitoring"
+                - "!velero"
                 - "!default"
       generate:
         apiVersion: networking.k8s.io/v1
@@ -194,6 +198,7 @@ spec:
                 - "!seaweedfs"
                 - "!reloader"
                 - "!monitoring"
+                - "!velero"
       generate:
         apiVersion: external-secrets.io/v1beta1
         kind: SecretStore
@@ -245,6 +250,7 @@ spec:
                 - "!seaweedfs"
                 - "!reloader"
                 - "!monitoring"
+                - "!velero"
                 - "!default"
       validate:
         message: "All tenant namespaces must define an 'owner' or 'team' metadata label."
