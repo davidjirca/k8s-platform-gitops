@@ -17,11 +17,14 @@ serviceAccount:
 config:
   service: |
     [SERVICE]
-        Flush         1
-        Log_Level     info
-        Daemon        off
-        Parsers_File  parsers.conf
+        Flush           1
+        Log_Level       info
+        Daemon          off
+        Parsers_File    parsers.conf
         Storage.metrics on
+        HTTP_Server     On
+        HTTP_Listen     0.0.0.0
+        HTTP_Port       2020
 
   inputs: |
     [INPUT]
@@ -58,6 +61,7 @@ config:
         URI                    /loki/api/v1/push
         Auto_Kubernetes_Labels on
         Labels                 job=fluent-bit
+        Label_Keys             $kubernetes['namespace_name'],$kubernetes['pod_name'],$kubernetes['container_name'],$kubernetes['labels']['app']
         Line_Format            json
         Drop_Single_Key        raw
         Buffer_Size            1MB
