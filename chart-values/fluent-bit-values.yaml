@@ -11,10 +11,6 @@ resources:
     cpu: 150m
     memory: 128Mi
 
-securityContext:
-  allowPrivilegeEscalation: false
-  readOnlyRootFilesystem: true
-
 serviceAccount:
   create: true
 
@@ -33,10 +29,11 @@ config:
         Tag               kube.*
         Path              /var/log/pods/*/*/*.log
         multiline.parser  cri, docker
-        DB                /var/log/flb_kube.db
         Mem_Buf_Limit     50MB
         Skip_Long_Lines   On
         Refresh_Interval  10
+        Ignore_Older      24h
+        Exclude_Path      *.gz,*.tmp
 
   filters: |
     [FILTER]
@@ -52,13 +49,6 @@ config:
         K8S-Logging.Parser  On
         K8S-Logging.Exclude On
 
-    [FILTER]
-        Name          modify
-        Match         kube.*
-        Condition     Key_Exists log
-        # Redact common tokens / secrets in flight
-        # Hardens privacy before sending to Loki
-
   outputs: |
     [OUTPUT]
         Name                   loki
@@ -68,7 +58,5 @@ config:
         URI                    /loki/api/v1/push
         Auto_Kubernetes_Labels on
         Labels                 job=fluent-bit
-        Label_Keys             $kubernetes['namespace_name'],$kubernetes['pod_name'],$kubernetes['container_name']
-        Remove_Keys            kubernetes,docker,stream
         Line_Format            json
         Drop_Single_Key        raw
