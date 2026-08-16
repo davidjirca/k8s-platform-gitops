@@ -27,7 +27,7 @@ config:
     [INPUT]
         Name              tail
         Tag               kube.*
-        Path              /var/log/pods/*/*/*.log
+        Path              /var/log/containers/*.log
         multiline.parser  cri, docker
         Mem_Buf_Limit     50MB
         Skip_Long_Lines   On
@@ -42,7 +42,7 @@ config:
         Kube_URL            https://kubernetes.default.svc:443
         Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
         Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
-        Kube_Tag_Prefix     kube.var.log.pods.
+        Kube_Tag_Prefix     kube.var.log.containers.
         Merge_Log           On
         Merge_Log_Key       log_processed
         Keep_Log            Off
@@ -53,8 +53,8 @@ config:
     [OUTPUT]
         Name                   loki
         Match                  kube.*
-        Host                   loki-gateway.monitoring.svc
-        Port                   80
+        Host                   loki.monitoring.svc
+        Port                   3100
         URI                    /loki/api/v1/push
         Auto_Kubernetes_Labels on
         Labels                 job=fluent-bit
