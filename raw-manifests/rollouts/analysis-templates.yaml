@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterAnalysisTemplate
+metadata:
+  name: http-success-rate
+spec:
+  metrics:
+    - name: success-rate
+      interval: 10s
+      count: 3
+      failureLimit: 1
+      successCondition: result[0] >= 99
+      provider:
+        prometheus:
+          address: http://prometheus-server.monitoring.svc:80
+          query: |
+            scalar(
+              (sum(rate(http_requests_total{status!~"5.*"}[2m])) or vector(1))
+              /
+              (sum(rate(http_requests_total[2m])) or vector(1))
+              * 100
+            )
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterAnalysisTemplate
+metadata:
+  name: http-latency-p99
+spec:
+  metrics:
+    - name: latency-p99
+      interval: 10s
+      count: 3
+      failureLimit: 1
+      successCondition: result[0] <= 0.250
+      provider:
+        prometheus:
+          address: http://prometheus-server.monitoring.svc:80
+          query: |
+            scalar(
+              histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[2m])) by (le))
+              or vector(0.050)
+            )

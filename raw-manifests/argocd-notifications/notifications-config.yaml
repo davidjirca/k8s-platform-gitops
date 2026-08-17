@@ -1,0 +1,135 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-notifications-cm
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+data:
+  # Trigger Definitions
+  trigger.on-sync-failed: |
+    - description: Application syncing has failed
+      send: [app-sync-failed]
+      when: app.status.operationState != nil and app.status.operationState.phase in ['Error', 'Failed']
+
+  trigger.on-health-degraded: |
+    - description: Application health is degraded
+      send: [app-health-degraded]
+      when: app.status.health.status == 'Degraded'
+
+  trigger.on-sync-status-unknown: |
+    - description: Application status is unknown
+      send: [app-sync-status-unknown]
+      when: app.status.sync.status == 'Unknown'
+
+  trigger.on-sync-succeeded: |
+    - description: Application syncing has succeeded
+      send: [app-sync-succeeded]
+      when: app.status.operationState != nil and app.status.operationState.phase in ['Succeeded']
+
+  trigger.on-drift-detected: |
+    - description: Application state has drifted from Git repo
+      send: [app-drift-detected]
+      when: app.status.sync.status == 'OutOfSync'
+
+  # Template Definitions
+  template.app-sync-failed: |
+    webhook:
+      generic:
+        method: POST
+        body: |
+          {
+            "event": "sync_failed",
+            "app": "{{.app.metadata.name}}",
+            "namespace": "{{.app.spec.destination.namespace}}",
+            "revision": "{{.app.status.sync.revision}}",
+            "message": "{{.app.status.operationState.message}}",
+            "status": "Failed",
+            "url": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}"
+          }
+      discord:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "🚨 Sync Failed: {{.app.metadata.name}}",
+              "color": 15158332,
+              "description": "Application sync encountered an error:\n```\n{{.app.status.operationState.message}}\n```",
+              "fields": [
+                {"name": "Namespace", "value": "{{.app.spec.destination.namespace}}", "inline": true},
+                {"name": "Revision", "value": "`{{.app.status.sync.revision}}`", "inline": true}
+              ],
+              "url": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}"
+            }]
+          }
+
+  template.app-health-degraded: |
+    webhook:
+      generic:
+        method: POST
+        body: |
+          {
+            "event": "health_degraded",
+            "app": "{{.app.metadata.name}}",
+            "namespace": "{{.app.spec.destination.namespace}}",
+            "status": "Degraded",
+            "message": "{{.app.status.health.message}}",
+            "url": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}"
+          }
+      discord:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "💔 Health Degraded: {{.app.metadata.name}}",
+              "color": 15105570,
+              "description": "Workload health has entered Degraded state.\nMessage: {{.app.status.health.message}}",
+              "fields": [
+                {"name": "Namespace", "value": "{{.app.spec.destination.namespace}}", "inline": true}
+              ],
+              "url": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}"
+            }]
+          }
+
+  template.app-sync-succeeded: |
+    webhook:
+      generic:
+        method: POST
+        body: |
+          {
+            "event": "sync_succeeded",
+            "app": "{{.app.metadata.name}}",
+            "namespace": "{{.app.spec.destination.namespace}}",
+            "revision": "{{.app.status.sync.revision}}",
+            "status": "Healthy",
+            "url": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}"
+          }
+
+  template.app-drift-detected: |
+    webhook:
+      generic:
+        method: POST
+        body: |
+          {
+            "event": "drift_detected",
+            "app": "{{.app.metadata.name}}",
+            "namespace": "{{.app.spec.destination.namespace}}",
+            "status": "OutOfSync",
+            "url": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}"
+          }
+
+  # Service Integrations
+  service.webhook.generic: |
+    url: $generic-webhook-url
+    headers:
+      - name: Content-Type
+        value: application/json
+
+  service.webhook.discord: |
+    url: $discord-webhook-url
+    headers:
+      - name: Content-Type
+        value: application/json
+
+  context: |
+    argocdUrl: http://argocd.codeforge.local
