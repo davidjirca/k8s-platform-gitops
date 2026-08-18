@@ -104,9 +104,10 @@ spec:
             - /bin/sh
             - -c
             - |
+              export HOME=/tmp
               export PIP_CACHE_DIR=/tmp/pip-cache
-              pip install --no-cache-dir prometheus-client
-              python /app/main.py
+              pip install --no-cache-dir --target /tmp/pkg prometheus-client
+              PYTHONPATH=/tmp/pkg python /app/main.py
           ports:
             - name: http-metrics
               containerPort: 8080
