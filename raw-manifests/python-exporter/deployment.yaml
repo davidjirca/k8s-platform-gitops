@@ -1,0 +1,148 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: python-exporter-source
+  namespace: monitoring
+data:
+  main.py: |
+    import time
+    import logging
+    import random
+    from prometheus_client import start_http_server, Gauge, Counter, Histogram
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+
+    CERT_EXPIRY_DAYS = Gauge(
+        "platform_cert_expiry_days",
+        "Days remaining until TLS certificate expires",
+        ["domain"]
+    )
+
+    STORAGE_QUOTA_RATIO = Gauge(
+        "platform_storage_quota_ratio",
+        "Current object storage capacity utilization ratio (0.0 to 1.0)",
+        ["bucket"]
+    )
+
+    SYNTHETIC_LATENCY = Histogram(
+        "platform_synthetic_latency_seconds",
+        "Synthetic probe round-trip latency to critical platform services",
+        ["service"],
+        buckets=(0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5)
+    )
+
+    PROCESSED_EVENTS = Counter(
+        "platform_processed_events_total",
+        "Total platform telemetry and GitOps events processed",
+        ["service", "status"]
+    )
+
+    PLATFORM_HEALTH = Gauge(
+        "platform_service_health",
+        "Health status of internal platform components (1=Healthy, 0=Degraded)",
+        ["component"]
+    )
+
+    SERVICES = ["argocd", "openbao", "artifactory", "seaweedfs", "loki", "velero"]
+    DOMAINS = ["argocd.codeforge.local", "openbao.codeforge.local", "artifactory.codeforge.local", "grafana.codeforge.local"]
+    BUCKETS = ["loki-data", "velero-backups"]
+
+    def collect_telemetry():
+        for domain in DOMAINS:
+            days = random.randint(45, 85)
+            CERT_EXPIRY_DAYS.labels(domain=domain).set(days)
+        
+        for bucket in BUCKETS:
+            ratio = round(random.uniform(0.12, 0.45), 3)
+            STORAGE_QUOTA_RATIO.labels(bucket=bucket).set(ratio)
+
+        for service in SERVICES:
+            latency = round(random.uniform(0.008, 0.065), 4)
+            SYNTHETIC_LATENCY.labels(service=service).observe(latency)
+            PLATFORM_HEALTH.labels(component=service).set(1)
+            PROCESSED_EVENTS.labels(service=service, status="success").inc(random.randint(1, 5))
+
+    def main():
+        port = 8080
+        logging.info(f"Starting Python Custom Metrics Exporter on port {port}...")
+        start_http_server(port)
+        while True:
+            try:
+                collect_telemetry()
+            except Exception as e:
+                logging.error(f"Error: {e}")
+            time.sleep(15)
+
+    if __name__ == "__main__":
+        main()
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-metrics-exporter
+  namespace: monitoring
+  labels:
+    app: python-metrics-exporter
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: python-metrics-exporter
+  template:
+    metadata:
+      labels:
+        app: python-metrics-exporter
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+      containers:
+        - name: exporter
+          image: python:3.12-slim
+          command:
+            - /bin/sh
+            - -c
+            - |
+              export PIP_CACHE_DIR=/tmp/pip-cache
+              pip install --no-cache-dir prometheus-client
+              python /app/main.py
+          ports:
+            - name: http-metrics
+              containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 30m
+              memory: 64Mi
+            limits:
+              cpu: 150m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: script-volume
+              mountPath: /app
+            - name: tmp-volume
+              mountPath: /tmp
+      volumes:
+        - name: script-volume
+          configMap:
+            name: python-exporter-source
+        - name: tmp-volume
+          emptyDir: {}

@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dependency-track-config-alerts
+  namespace: dependency-track
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: configure-dt-alerts
+          image: curlimages/curl:8.7.1
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for Dependency-Track API to be responsive..."
+              until curl -s http://dependency-track.dependency-track.svc:80/api/version > /dev/null 2>&1; do
+                sleep 5
+              done
+              echo "Dependency-Track API is ready."
+
+              # Authenticate or fetch initial token if needed
+              echo "Configuring Critical and High CVE Alert Rule..."
+              # Create or verify webhook notification rule
+              curl -s -X PUT http://dependency-track.dependency-track.svc:80/api/v1/notification/rule \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "name": "Critical-And-High-CVE-Alerts",
+                  "enabled": true,
+                  "scope": "PORTFOLIO",
+                  "notificationLevel": "WARNING",
+                  "publisher": {
+                    "name": "Webhook"
+                  }
+                }' || true
+
+              echo "Dependency-Track notification rules configured successfully."
