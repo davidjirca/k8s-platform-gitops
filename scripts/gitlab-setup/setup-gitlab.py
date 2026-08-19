@@ -36,14 +36,14 @@ SUBGROUPS = [
 
 # Standard Group-Level Variables
 GROUP_VARIABLES = [
-    {"key": "ARTIFACTORY_URL", "value": os.getenv("ARTIFACTORY_URL", "http://artifactory.codeforge.local:8082"), "masked": false, "protected": false},
-    {"key": "ARTIFACTORY_USER", "value": os.getenv("ARTIFACTORY_USER", "admin"), "masked": false, "protected": false},
-    {"key": "ARTIFACTORY_PASSWORD", "value": os.getenv("ARTIFACTORY_PASSWORD", "password123"), "masked": true, "protected": false},
-    {"key": "COSIGN_PASSWORD", "value": os.getenv("COSIGN_PASSWORD", "codeforge-cosign-secret"), "masked": true, "protected": false},
-    {"key": "DT_API_URL", "value": os.getenv("DT_API_URL", "http://dtrack.codeforge.local"), "masked": false, "protected": false},
-    {"key": "DT_API_KEY", "value": os.getenv("DT_API_KEY", "placeholder-dt-api-key"), "masked": true, "protected": false},
-    {"key": "GITOPS_REPO_URL", "value": "https://github.com/davidjirca/k8s-platform-gitops.git", "masked": false, "protected": false},
-    {"key": "GITHUB_GITOPS_TOKEN", "value": os.getenv("GITHUB_GITOPS_TOKEN", "ghp_placeholder_token"), "masked": true, "protected": false},
+    {"key": "ARTIFACTORY_URL", "value": os.getenv("ARTIFACTORY_URL", "http://artifactory.codeforge.local:8082"), "masked": False, "protected": False},
+    {"key": "ARTIFACTORY_USER", "value": os.getenv("ARTIFACTORY_USER", "admin"), "masked": False, "protected": False},
+    {"key": "ARTIFACTORY_PASSWORD", "value": os.getenv("ARTIFACTORY_PASSWORD", "password123"), "masked": True, "protected": False},
+    {"key": "COSIGN_PASSWORD", "value": os.getenv("COSIGN_PASSWORD", "codeforge-cosign-secret"), "masked": True, "protected": False},
+    {"key": "DT_API_URL", "value": os.getenv("DT_API_URL", "http://dtrack.codeforge.local"), "masked": False, "protected": False},
+    {"key": "DT_API_KEY", "value": os.getenv("DT_API_KEY", "placeholder-dt-api-key"), "masked": True, "protected": False},
+    {"key": "GITOPS_REPO_URL", "value": "https://github.com/davidjirca/k8s-platform-gitops.git", "masked": False, "protected": False},
+    {"key": "GITHUB_GITOPS_TOKEN", "value": os.getenv("GITHUB_GITOPS_TOKEN", "ghp_placeholder_token"), "masked": True, "protected": False},
 ]
 
 def make_request(path, method="GET", data=None):
