@@ -59,23 +59,45 @@ def make_request(path, method="GET", data=None):
             return {"_already_exists": True, "error": err_body}
         raise Exception(f"HTTP {e.code} on {method} {url}: {err_body}")
 
+TOP_GROUP_NAME = os.getenv("TOP_GROUP_NAME", "codeforge-platform")
+
+def verify_user():
+    print("🔍 Verifying authenticated GitLab user...")
+    try:
+        user = make_request("user")
+        print(f"  ✓ Authenticated as: @{user.get('username')} ({user.get('name')})")
+        print(f"  ✓ Can create group: {user.get('can_create_group', True)}")
+        return user
+    except Exception as e:
+        print(f"  ⚠️ Warning: Could not verify user details: {e}")
+        return None
+
 def get_or_create_top_group():
-    print("🔍 Checking top-level group 'codeforge-platform'...")
-    groups = make_request("groups?search=codeforge-platform")
+    print(f"🔍 Checking top-level group '{TOP_GROUP_NAME}'...")
+    groups = make_request(f"groups?search={TOP_GROUP_NAME}")
     for g in groups:
-        if g.get("path") == "codeforge-platform":
+        if g.get("path") == TOP_GROUP_NAME:
             print(f"  ✓ Found existing group ID: {g['id']}")
             return g["id"]
     
-    print("🚀 Creating top-level group 'codeforge-platform'...")
-    res = make_request("groups", method="POST", data={
-        "name": "codeforge-platform",
-        "path": "codeforge-platform",
-        "visibility": "private",
-        "description": "CodeForge Enterprise Platform and DevSecOps Foundation"
-    })
-    print(f"  ✓ Created group ID: {res['id']}")
-    return res["id"]
+    print(f"🚀 Creating top-level group '{TOP_GROUP_NAME}'...")
+    try:
+        res = make_request("groups", method="POST", data={
+            "name": TOP_GROUP_NAME,
+            "path": TOP_GROUP_NAME,
+            "visibility": "private",
+            "description": "CodeForge Enterprise Platform and DevSecOps Foundation"
+        })
+        print(f"  ✓ Created group ID: {res['id']}")
+        return res["id"]
+    except Exception as e:
+        if "403" in str(e):
+            print(f"\n❌ GitLab returned 403 Forbidden.")
+            print(f"👉 On GitLab.com, '{TOP_GROUP_NAME}' might already be taken globally, or your token may lack top-level group creation permissions.")
+            print(f"👉 Fix: Set a custom unique name, for example:")
+            print(f"   export TOP_GROUP_NAME='yourname-codeforge-platform'")
+            print(f"   python3 gitlab-setup/setup-gitlab.py\n")
+        raise e
 
 def create_subgroups(parent_id):
     print("\n📁 Provisioning Subgroups...")
@@ -115,6 +137,7 @@ def main():
     print("==================================================")
     print("  CodeForge GitLab Group & Subgroup Provisioning  ")
     print("==================================================")
+    verify_user()
     top_group_id = get_or_create_top_group()
     create_subgroups(top_group_id)
     configure_group_variables(top_group_id)
